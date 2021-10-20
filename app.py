@@ -1,11 +1,11 @@
 import json
 import asyncio
-from os import pipe
 import requests
 import pprint
 import aiohttp
 from requests.models import Response
 from requests.sessions import PreparedRequest
+import time
 
 LIMIT = 50
 pp = pprint.PrettyPrinter(indent=4)
@@ -56,7 +56,6 @@ class Crypto:
 async def crypto_async(info):
     crypto = Crypto.create_with_info(info)
     await crypto.get_periods()
-    await asyncio.sleep(1)
     return crypto
 
 async def get_top_100_cryptos():
@@ -67,8 +66,15 @@ async def get_top_100_cryptos():
     for crypto in response:
         info = crypto["CoinInfo"]        
         tasks.append(crypto_async(info))
-        
-    r = await asyncio.gather(*tasks)
-    #[print(x) for x in r]
+    
+    task_spliter = len(tasks) // 2
+
+    t1 = await asyncio.gather(*tasks[:task_spliter])
+    t2 = await asyncio.gather(*tasks[task_spliter:])    
+    
+    with open("result.txt", "a+") as f:
+        for x in (t1+t2):
+            f.writelines(str(x) + "\n")
+    
 
 asyncio.run(get_top_100_cryptos())
