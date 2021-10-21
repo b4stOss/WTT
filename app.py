@@ -8,6 +8,7 @@ from requests.sessions import PreparedRequest
 import time
 
 LIMIT = 50
+STABLECOINS = ["USDT", "USDC", "DAI", "UST", "BUSD"]
 pp = pprint.PrettyPrinter(indent=4)
 
 class Endpoint:
@@ -41,18 +42,22 @@ class Crypto:
     def mooving_average(self):
         if len(self.price_list) != 0:
             return sum(self.price_list) / len(self.price_list)
-
         return "NaN"
-        
+    
+    @property
+    def is_ready(self):
+        if self.price_list:
+            if abs(self.mooving_average - self.price_list[-1]) / self.price_list[-1] < 0.05:
+                return True
+        return False
 
     @staticmethod
     def create_with_info(info):
         return Crypto(info["Id"], info["Name"])
 
     def __str__(self):
-        return f"{self.id} - {self.name} - {self.mooving_average}"
-
-
+        return f"{self.name}"
+    
 async def crypto_async(info):
     crypto = Crypto.create_with_info(info)
     await crypto.get_periods()
@@ -64,17 +69,20 @@ async def get_top_100_cryptos():
     response = response.json()["Data"]
 
     for crypto in response:
-        info = crypto["CoinInfo"]        
-        tasks.append(crypto_async(info))
+        if crypto["CoinInfo"]["Name"] not in STABLECOINS:
+            info = crypto["CoinInfo"]        
+            tasks.append(crypto_async(info))
     
     task_spliter = len(tasks) // 2
 
     t1 = await asyncio.gather(*tasks[:task_spliter])
     t2 = await asyncio.gather(*tasks[task_spliter:])    
     
-    with open("result.txt", "a+") as f:
+    with open("result.txt", "w") as f:
+        f.writelines(f"Hi there! \nThese coins are close to their ma{LIMIT} daily, you should check these out :\n\n")
         for x in (t1+t2):
-            f.writelines(str(x) + "\n")
+            if x.is_ready:  
+                f.writelines(str(x) + ", ")
     
-
-asyncio.run(get_top_100_cryptos())
+#asyncio.run(get_top_100_cryptos())
+asyncio.get_event_loop().run_until_complete(get_top_100_cryptos())
