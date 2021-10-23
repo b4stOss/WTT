@@ -8,9 +8,9 @@ STABLECOINS = ["USDT", "USDC", "DAI", "UST", "BUSD"]
 
 
 INDICATOR = sys.argv[1]
-if(INDICATOR == "ALL"):
-    PERIODS = 50
-else:
+if INDICATOR == "RSI" :
+    PERIODS = 14
+else :
     PERIODS = int(sys.argv[2])
 
 class Endpoint:
@@ -46,9 +46,9 @@ async def get_top_100_cryptos():
         if INDICATOR == "MA":
             f.writelines(f"Hi there! \nThese coins are close to their {INDICATOR}{PERIODS} daily, you should check these out :\n\n")
         if INDICATOR == "RSI":
-            f.writelines(f"Hi there! \nThese coins are on good {INDICATOR}{PERIODS} daily levels, you should check these out :\n\n")
+            f.writelines(f"Hi there! \nThese coins are on good {INDICATOR}14 daily levels, you should check these out :\n\n")
         if INDICATOR == "ALL":
-            f.writelines(f"Hi there! \nThese coins are on good levels according to RSI14 and MA50 daily, you should check these out :\n\n")
+            f.writelines(f"Hi there! \nThese coins are on good levels according to RSI14 and MA{PERIODS} daily, you should check these out :\n\n")
 
         for x in info:
             if x.is_ready(INDICATOR):  
