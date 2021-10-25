@@ -1,58 +1,27 @@
-import json, asyncio, requests, pprint, aiohttp, time, numpy as np, sys
-from crypto import Crypto
-from requests.models import Response
-from requests.sessions import PreparedRequest
+from aiohttp import web
+import aiofiles
+from utils import get_top_100_cryptos
 
-pp = pprint.PrettyPrinter(indent=4)
-STABLECOINS = ["USDT", "USDC", "DAI", "UST", "BUSD"]
+routes = web.RouteTableDef()
 
+@routes.get('/result')
+async def result(request):
+    indicator = request.rel_url.query['indicator']
 
-INDICATOR = sys.argv[1]
-if INDICATOR == "RSI" :
-    PERIODS = 14
-else :
-    PERIODS = int(sys.argv[2])
+    if indicator != "RSI":
+        period = int(request.rel_url.query['period'])
+    else:
+        period = 14
 
-class Endpoint:
-    base_url = "https://min-api.cryptocompare.com/data/v2"
-    period = f"{base_url}/"
+    resp = await get_top_100_cryptos(indicator, period)
+    return web.Response(text=resp)
 
-class API:
-    pass
-
-async def crypto_async(info):
-    crypto = Crypto.create_with_info(info)
-    await crypto.get_periods(PERIODS)
-    return crypto
-
-async def get_top_100_cryptos():
-    tasks = []
-    response = requests.get("https://min-api.cryptocompare.com/data/top/mktcapfull?limit=100&tsym=USD")
-    response = response.json()["Data"]
-
-    for crypto in response:
-        if crypto["CoinInfo"]["Name"] not in STABLECOINS:
-            info = crypto["CoinInfo"]        
-            tasks.append(crypto_async(info))
+@routes.get("/")
+async def index(request):
+    async with aiofiles.open("templates/index.html", "r") as r:
+        return web.Response(text=await r.read(), content_type='text/html')
     
-    parts = np.array_split(tasks, 3)
 
-    info = []
-
-    for part in parts:
-        info += await asyncio.gather(*list(part))  
-    
-    with open("result.txt", "w") as f:
-        if INDICATOR == "MA":
-            f.writelines(f"Hi there! \nThese coins are close to their {INDICATOR}{PERIODS} daily, you should check these out :\n\n")
-        if INDICATOR == "RSI":
-            f.writelines(f"Hi there! \nThese coins are on good {INDICATOR}14 daily levels, you should check these out :\n\n")
-        if INDICATOR == "ALL":
-            f.writelines(f"Hi there! \nThese coins are on good levels according to RSI14 and MA{PERIODS} daily, you should check these out :\n\n")
-
-        for x in info:
-            if x.is_ready(INDICATOR):  
-                f.writelines(str(x) + ", ")
-    
-#asyncio.run(get_top_100_cryptos())
-asyncio.get_event_loop().run_until_complete(get_top_100_cryptos())
+app = web.Application()
+app.add_routes(routes)
+web.run_app(app)
