@@ -8,13 +8,27 @@
 </head>
 <body>
     <form action="/result" method="get">
-        <select name="indicator" id="">
-            <option value="RSI">RSI</option>
+        <select name="indicator" id="indicator">
             <option value="MA">MA</option>
+            <option value="RSI">RSI</option>
             <option value="ALL">ALL</option>
         </select>
-        <input type="number" name="period" placeholder="periods" step="1"/>
+        <input type="number" name="period" placeholder="periods" id="periods" step="1"/>
         <input type="submit" value="Check">
     </form>
+    <script>
+        const indicator = document.querySelector("#indicator")
+        const periods = document.querySelector("#periods")
+
+        indicator.addEventListener("change", _ => {
+            if(indicator.value == "RSI") {
+                console.log("lol")
+                periods.style.display = "none"
+            }
+            else {
+                periods.style.display = ""
+            }
+        })
+    </script>
 </body>
-</html>
+</html> 
